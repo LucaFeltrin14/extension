@@ -1,0 +1,48 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Privacy Sentinel</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body data-view="dashboard">
+    <main id="app">
+      <header class="app-header">
+        <h1>Privacy Sentinel</h1>
+        <div class="header-actions">
+          <button id="refresh-dashboard" class="icon-button" title="Atualizar dados">&#x21bb;</button>
+          <button id="open-settings" class="secondary">Configuracoes</button>
+        </div>
+      </header>
+      <section id="view-dashboard" class="view active">
+        <section id="score"></section>
+        <section id="summary"></section>
+        <section id="details"></section>
+      </section>
+      <section id="view-settings" class="view">
+        <h2>Configuracoes</h2>
+        <div class="settings-group">
+          <label class="checkbox">
+            <input type="checkbox" id="settings-enable-blocking" />
+            Bloquear rastreadores automaticamente
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" id="settings-enable-notifications" />
+            Exibir notificacoes quando houver bloqueios ou hijacking
+          </label>
+        </div>
+        <div class="settings-group">
+          <label for="settings-custom-domains">Dominios personalizados (um por linha)</label>
+          <textarea id="settings-custom-domains" placeholder="dominio.com"></textarea>
+        </div>
+        <div class="settings-actions">
+          <button id="settings-save" class="primary">Salvar</button>
+          <button id="settings-reset" class="secondary">Redefinir</button>
+          <button id="close-settings" class="text">Voltar</button>
+        </div>
+        <p id="settings-status" class="settings-status"></p>
+      </section>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,38 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Configurações - Privacy Sentinel</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Configurações</h1>
+      <section>
+        <h2>Listas de Bloqueio Personalizadas</h2>
+        <textarea id="custom-domains" placeholder="dominio.com"></textarea>
+        <div class="actions">
+          <button id="save-custom">Salvar</button>
+          <button id="reset-custom">Redefinir</button>
+        </div>
+      </section>
+      <section>
+        <h2>Preferências</h2>
+        <label>
+          <input type="checkbox" id="enable-blocking" />
+          Bloquear rastreadores automaticamente
+        </label>
+        <label>
+          <input type="checkbox" id="enable-notifications" />
+          Notificar sobre ameaças de hijacking
+        </label>
+      </section>
+      <section>
+        <h2>Sobre</h2>
+        <p>Extensão desenvolvida para a disciplina Avaliação Intermediária Tecnologias Hackers.</p>
+      </section>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>
+
