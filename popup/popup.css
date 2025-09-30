@@ -284,3 +284,47 @@ button.text:hover {
   color: #f97316;
   font-size: 12px;
 }
+
+.score-card-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.score-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.score-meter-track {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.25);
+  overflow: hidden;
+}
+
+.score-meter-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.3s ease;
+}
+
+.score-meter-fill--safe {
+  background: linear-gradient(120deg, #4ade80 0%, #22c55e 100%);
+}
+
+.score-meter-fill--warn {
+  background: linear-gradient(120deg, #f97316 0%, #facc15 100%);
+}
+
+.score-meter-fill--risk {
+  background: linear-gradient(120deg, #f87171 0%, #ef4444 100%);
+}
+
+.score-meter-caption {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}

@@ -18,11 +18,18 @@
     'beef', 'hook.js', 'browser-hijack', 'keylogger', 'toolbar/installer', 'extension-dll'
   ];
 
+  const EASYLIST_URLS = [
+    'https://easylist.to/easylist/easylist.txt',
+    'https://cdn.jsdelivr.net/gh/easylist/easylist/easylist.txt'
+  ];
+
   const tabState = new Map();
   const trackerLists = {
-    default: new Set(),
+    fallback: new Set(),
+    remote: new Set(),
     custom: new Set()
   };
+
   const state = {
     settings: { ...DEFAULT_SETTINGS },
     trackerCache: new Set()
@@ -38,22 +45,94 @@
   init();
 
   async function init() {
-    await Promise.all([loadDefaultTrackers(), loadSettings()]);
+    await Promise.all([loadFallbackTrackers(), loadSettings()]);
     registerListeners();
+    loadRemoteTrackers().catch((error) => {
+      console.error('[Privacy Sentinel] Falha ao carregar EasyList', error);
+    });
   }
 
-  async function loadDefaultTrackers() {
+  async function loadFallbackTrackers() {
     try {
       const response = await fetch(browserApi.runtime.getURL('data/tracker-list.json'));
       const json = await response.json();
+      const fallback = new Set();
       (json.domains || []).forEach((entry) => {
         if (!entry || typeof entry !== 'string') return;
-        trackerLists.default.add(entry.trim().toLowerCase());
+        fallback.add(entry.trim().toLowerCase());
       });
+      trackerLists.fallback = fallback;
       rebuildTrackerCache();
     } catch (error) {
-      console.error('[Privacy Sentinel] Erro ao carregar lista padrão de rastreadores', error);
+      console.error('[Privacy Sentinel] Erro ao carregar lista padrao de rastreadores', error);
     }
+  }
+
+  async function loadRemoteTrackers() {
+    for (const url of EASYLIST_URLS) {
+      try {
+        const response = await fetch(url, { cache: 'no-cache' });
+        if (!response.ok) {
+          continue;
+        }
+        const text = await response.text();
+        const parsed = parseEasyList(text);
+        if (parsed.size > 0) {
+          trackerLists.remote = parsed;
+          rebuildTrackerCache();
+          console.info(`[Privacy Sentinel] EasyList carregado (${parsed.size} dominios)`);
+          return;
+        }
+      } catch (error) {
+        console.warn(`[Privacy Sentinel] Falha ao processar EasyList de ${url}`, error);
+      }
+    }
+  }
+
+  function parseEasyList(text) {
+    const domains = new Set();
+    if (!text) return domains;
+
+    const rulePattern = /^\|\|([^\^\/\*:]+)\^/i;
+    const hostsPattern = /^(?:0\.0\.0\.0|127\.0\.0\.1)\s+([a-z0-9.-]+\.[a-z]{2,})$/i;
+    const plainDomainPattern = /^([a-z0-9.-]+\.[a-z]{2,})$/i;
+
+    text.split(/\r?\n/).forEach((rawLine) => {
+      const line = rawLine.trim();
+      if (!line || line.startsWith('!') || line.startsWith('@@')) {
+        return;
+      }
+      let match = rulePattern.exec(line);
+      if (match) {
+        const domain = cleanDomain(match[1]);
+        if (domain) domains.add(domain);
+        return;
+      }
+      match = hostsPattern.exec(line);
+      if (match) {
+        const domain = cleanDomain(match[1]);
+        if (domain) domains.add(domain);
+        return;
+      }
+      if (!line.includes('/')) {
+        match = plainDomainPattern.exec(line.replace(/^\|\|/, ''));
+        if (match) {
+          const domain = cleanDomain(match[1]);
+          if (domain) domains.add(domain);
+        }
+      }
+    });
+
+    return domains;
+  }
+
+  function cleanDomain(value) {
+    if (!value) return '';
+    const trimmed = value.replace(/^\.+/, '').replace(/\.+$/, '').toLowerCase();
+    if (!trimmed || trimmed.includes('*') || trimmed.includes('^')) {
+      return '';
+    }
+    return trimmed;
   }
 
   async function loadSettings() {
@@ -63,7 +142,7 @@
       trackerLists.custom = new Set((state.settings.customDomains || []).map((d) => d.toLowerCase().trim()).filter(Boolean));
       rebuildTrackerCache();
     } catch (error) {
-      console.error('[Privacy Sentinel] Erro ao carregar configurações', error);
+      console.error('[Privacy Sentinel] Erro ao carregar configuracoes', error);
     }
   }
 
@@ -87,7 +166,11 @@
   }
 
   function rebuildTrackerCache() {
-    state.trackerCache = new Set([...trackerLists.default, ...trackerLists.custom]);
+    state.trackerCache = new Set([
+      ...trackerLists.fallback,
+      ...trackerLists.remote,
+      ...trackerLists.custom
+    ]);
   }
 
   function handleStorageChange(changes, area) {
@@ -161,6 +244,7 @@
 
     const targetHost = safeHostname(details.url);
     if (!targetHost) return {};
+
     const baseDomain = extractBaseDomainFromHost(targetHost);
     const firstParty = tabInfo.firstPartyDomain || extractBaseDomain(details.documentUrl || tabInfo.url || details.url);
     tabInfo.firstPartyDomain = firstParty;
@@ -202,7 +286,7 @@
     if (isSuspicious) {
       tabInfo.hijackingAlerts.push({
         url: details.url,
-        reason: 'Possível tentativa de hijacking detectada pelo padrão da URL',
+        reason: 'Possivel tentativa de hijacking detectada pelo padrao da URL',
         timeStamp: details.timeStamp
       });
       maybeNotifyHijacking(tabInfo, details.url);
@@ -248,13 +332,13 @@
         message: `${record.domain} foi bloqueado.`
       });
     } catch (error) {
-      console.warn('[Privacy Sentinel] Falha ao gerar notificação', error);
+      console.warn('[Privacy Sentinel] Falha ao gerar notificacao', error);
     }
   }
 
   function maybeNotifyHijacking(tabInfo, url) {
     if (!state.settings.notificationsEnabled) return;
-    const text = `Possível sequestro de navegador detectado em ${url}`;
+    const text = `Possivel sequestro de navegador detectado em ${url}`;
     try {
       browserApi.notifications.create(`hijack-${Date.now()}`, {
         type: 'basic',
@@ -263,7 +347,7 @@
         message: text
       });
     } catch (error) {
-      console.warn('[Privacy Sentinel] Falha ao gerar notificação de hijacking', error);
+      console.warn('[Privacy Sentinel] Falha ao gerar notificacao de hijacking', error);
     }
   }
 
@@ -366,7 +450,7 @@
           const domainCookies = await browserApi.cookies.getAll({ domain });
           cookiesEntries.push(...domainCookies);
         } catch (error) {
-          // Ignore domains we cannot query
+          // ignorar dominios inacessiveis
         }
       }
 
@@ -380,12 +464,12 @@
       };
 
       const syncCandidates = new Map();
-      const firstParty = tabInfo.firstPartyDomain;
+      const firstPartyDomain = tabInfo.firstPartyDomain;
 
       cookiesEntries.forEach((cookie) => {
         aggregated.total += 1;
         const cookieDomain = extractBaseDomainFromCookie(cookie.domain);
-        const isFirstParty = cookieDomain === firstParty;
+        const isFirstParty = cookieDomain === firstPartyDomain;
         if (isFirstParty) {
           aggregated.firstParty += 1;
         } else {
@@ -554,15 +638,3 @@
     }
   }
 })();
-
-
-
-
-
-
-
-
-
-
-
-

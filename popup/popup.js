@@ -148,14 +148,23 @@
       showError('Sem dados disponiveis para esta aba.');
       return;
     }
+    const clamped = clampScore(score.value);
+    const meterClass = scoreMeterClass(clamped);
     elements.score.innerHTML = `
       <div class="score-card">
-        <div class="score-value">${Number.isFinite(score.value) ? score.value : 'N/A'}</div>
-        <div class="score-label">${escapeHtml(score.label || '')}</div>
+        <div class="score-card-main">
+          <div class="score-value">${Number.isFinite(score.value) ? clamped : 'N/A'}</div>
+          <div class="score-label">${escapeHtml(score.label || '')}</div>
+        </div>
+        <div class="score-meter">
+          <div class="score-meter-track">
+            <div class="score-meter-fill ${meterClass}" style="width: ${clamped}%"></div>
+          </div>
+          <div class="score-meter-caption">${clamped} / 100</div>
+        </div>
       </div>
     `;
   }
-
   function renderSummary(data) {
     if (!elements.summary) return;
     const thirdParty = safeArray(data.thirdPartyRequests);
@@ -410,6 +419,17 @@
     return typeof value === 'number' && Number.isFinite(value) ? value : 0;
   }
 
+  function scoreMeterClass(value) {
+    if (value >= 70) return 'score-meter-fill--safe';
+    if (value >= 40) return 'score-meter-fill--warn';
+    return 'score-meter-fill--risk';
+  }
+
+  function clampScore(value) {
+    if (!Number.isFinite(value)) return 0;
+    return Math.max(0, Math.min(100, Math.round(value)));
+  }
+
   function escapeHtml(value) {
     return String(value || '')
       .replace(/&/g, '&amp;')
@@ -419,8 +439,3 @@
       .replace(/'/g, '&#39;');
   }
 })();
-
-
-
-
-

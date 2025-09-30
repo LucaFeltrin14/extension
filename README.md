@@ -4,6 +4,7 @@ Extensao para Firefox que monitora rastreadores, cookies e tecnicas de fingerpri
 
 ## Recursos principais
 - Detecta conexoes de terceiros e sinaliza dominios presentes nas listas de rastreadores.
+- Integra EasyList automaticamente (com fallback offline) para aumentar a cobertura de dominios de rastreamento.
 - Bloqueia automaticamente rastreadores conhecidos (pode ser desativado nas configuracoes).
 - Resume cookies de primeira e terceira parte, identifica cookies persistentes e possiveis sincronismos.
 - Captura o uso de APIs de Canvas associadas a fingerprinting.
@@ -51,6 +52,3 @@ icons/
   icon-48.png
   icon-96.png
 ```
-
-
-
